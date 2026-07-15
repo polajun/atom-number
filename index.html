@@ -3,91 +3,1146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>바로 사용하는 페이지</title>
+    <title>주기율표 삼중 매칭 게임 (Periodic Table Triple Match)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* 기본 스타일 초기화 및 레이아웃 설정 */
         body {
-            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f6f9;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            overflow-x: hidden;
         }
 
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
+        /* 크로스 브라우저 및 iFrame 최적화 3D 카드 플립 시스템 */
+        .perspective-1000 {
+            perspective: 1000px;
+            -webkit-perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 0.75rem; /* rounded-xl */
+            /* 회전과 투명도, 레이어를 모두 트랜지션 처리하여 렌더링 씹힘 방지 */
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, z-index 0.4s step-end;
         }
 
-        h1 {
-            color: #4A90E2;
-            margin-bottom: 20px;
-            font-size: 24px;
+        /* 뒷면 (물음표 카드 - 초기 노출 상태) */
+        .card-face-back {
+            transform: rotateY(0deg);
+            -webkit-transform: rotateY(0deg);
+            opacity: 1;
+            z-index: 2;
+        }
+        /* 앞면 (원소 실제 정보 카드 - 초기 회전되어 숨겨진 상태) */
+        .card-face-front {
+            transform: rotateY(-180deg);
+            -webkit-transform: rotateY(-180deg);
+            opacity: 0;
+            z-index: 1;
+        }
+        
+        /* 카드 뒤집기 시그널 발생 시 앞뒷면 교차 대칭 회전 및 오퍼시티 처리 */
+        .card-inner.is-flipped .card-face-back {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+            opacity: 0;
+            z-index: 1;
+        }
+        .card-inner.is-flipped .card-face-front {
+            transform: rotateY(0deg);
+            -webkit-transform: rotateY(0deg);
+            opacity: 1;
+            z-index: 2;
+        }
+        
+        /* 틀렸을 때의 흔들림(Shake) 애니메이션 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
         }
 
-        p {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #666;
+        /* 매칭 성공 시 파티클 부유 페이드아웃 효과 */
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1.1); opacity: 0; }
+        }
+        .animate-float-up {
+            animation: float-up 0.8s forwards ease-out;
         }
 
-        /* 인터랙티브 버튼 스타일 */
-        .btn {
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.1s ease;
+        /* 스크롤바 디자인 */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .btn:hover {
-            background-color: #357ABD;
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
         }
-
-        .btn:active {
-            transform: scale(0.98);
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
         }
-
-        /* 결과 메시지 스타일 */
-        #result {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #2ecc71;
-            min-height: 24px;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
     </style>
 </head>
-<body>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
 
-    <div class="container">
-        <h1>HTML 준비 완료!</h1>
-        <p>이 파일은 즉시 사용이 가능한 완전한 형태의 HTML 템플릿입니다. 필요에 따라 텍스트나 기능을 수정하여 사용하세요.</p>
-        
-        <!-- 작동 확인용 버튼 -->
-        <button class="btn" onclick="sayHello()">버튼 클릭해보기</button>
-        <div id="result"></div>
+    <!-- 1. 메인 로비 화면 (진입점) -->
+    <div id="lobby-screen" class="max-w-5xl mx-auto w-full px-4 py-12 flex-grow flex flex-col justify-center gap-8">
+        <!-- 로비 헤더 -->
+        <div class="text-center space-y-4">
+            <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 items-center justify-center shadow-2xl shadow-indigo-500/30 animate-bounce">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                주기율표 삼중 매칭 퍼즐
+            </h1>
+            <p class="text-slate-400 max-w-xl mx-auto text-sm sm:text-base">
+                번호(1~20) • 기호(H~Ca) • 이름(수소~칼슘) 세 종류의 카드가 흩어져 있습니다. 알맞은 조합을 찾아 터치하여 3중 매칭해 보세요!
+            </p>
+        </div>
+
+        <!-- 모드 및 난이도별 패널 그리드 선택부 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <!-- 메모리 모드 패널 그룹 -->
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 flex flex-col gap-4 shadow-xl">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🧠</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-indigo-300">메모리 모드 (Memory Match)</h3>
+                        <p class="text-xs text-slate-500">카드를 뒤집어가며 위치를 기억해 매칭하는 지능적인 룰</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                    <button onclick="startGameFromLobby('memory', 'easy')" class="group relative overflow-hidden bg-slate-950 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/50 p-5 rounded-2xl text-left transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="text-xs font-bold text-slate-400 mb-1">EASY LEVEL</div>
+                        <div class="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">1 ~ 10번 원소</div>
+                        <div class="text-[11px] text-slate-500 mt-2">총 30장의 카드 매칭</div>
+                    </button>
+                    <button onclick="startGameFromLobby('memory', 'hard')" class="group relative overflow-hidden bg-slate-950 hover:bg-violet-950/40 border border-slate-800 hover:border-violet-500/50 p-5 rounded-2xl text-left transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="absolute top-3 right-3 text-[10px] bg-red-500/20 text-red-400 font-bold px-1.5 py-0.5 rounded animate-pulse">RANKING</div>
+                        <div class="text-xs font-bold text-slate-400 mb-1">HARD LEVEL</div>
+                        <div class="text-base font-bold text-white group-hover:text-violet-300 transition-colors">1 ~ 20번 원소</div>
+                        <div class="text-[11px] text-slate-500 mt-2">총 60장의 카드 • 랭킹 제공</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 스피드 모드 패널 그룹 -->
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 flex flex-col gap-4 shadow-xl">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⚡</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-teal-300">스피드 모드 (Speed Match)</h3>
+                        <p class="text-xs text-slate-500">모든 정보가 노출된 상태에서 고속으로 짝을 매칭하는 룰</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                    <button onclick="startGameFromLobby('speed', 'easy')" class="group relative overflow-hidden bg-slate-950 hover:bg-teal-950/40 border border-slate-800 hover:border-teal-500/50 p-5 rounded-2xl text-left transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="text-xs font-bold text-slate-400 mb-1">EASY LEVEL</div>
+                        <div class="text-base font-bold text-white group-hover:text-teal-300 transition-colors">1 ~ 10번 원소</div>
+                        <div class="text-[11px] text-slate-500 mt-2">총 30장의 카드 매칭</div>
+                    </button>
+                    <button onclick="startGameFromLobby('speed', 'hard')" class="group relative overflow-hidden bg-slate-950 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-2xl text-left transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="absolute top-3 right-3 text-[10px] bg-red-500/20 text-red-400 font-bold px-1.5 py-0.5 rounded animate-pulse">RANKING</div>
+                        <div class="text-xs font-bold text-slate-400 mb-1">HARD LEVEL</div>
+                        <div class="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">1 ~ 20번 원소</div>
+                        <div class="text-[11px] text-slate-500 mt-2">총 60장의 카드 • 랭킹 제공</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 실시간 세션 랭킹 보드 대시보드 -->
+        <div class="bg-slate-900/20 border border-slate-800/60 rounded-3xl p-6 mt-2">
+            <h3 class="text-base font-bold text-slate-300 mb-4 flex items-center gap-2">
+                🏆 명예의 전당 (세션 최고 기록)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 메모리 Hard 랭킹 -->
+                <div class="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-4">
+                    <div class="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1.5">🧠 메모리 모드 [HARD]</div>
+                    <ul id="lobby-ranking-memory" class="text-xs space-y-2 text-slate-400">
+                        <li class="py-1 text-center text-slate-500">등록된 랭킹 기록이 없습니다.</li>
+                    </ul>
+                </div>
+                <!-- 스피드 Hard 랭킹 -->
+                <div class="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-4">
+                    <div class="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">⚡ 스피드 모드 [HARD]</div>
+                    <ul id="lobby-ranking-speed" class="text-xs space-y-2 text-slate-400">
+                        <li class="py-1 text-center text-slate-500">등록된 랭킹 기록이 없습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 실제 퍼즐 게임 보드 화면 (기본 숨김) -->
+    <div id="game-screen" class="hidden flex-grow flex flex-col justify-between">
+        <!-- 메인 네비게이션 헤더 -->
+        <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <!-- 타이틀 로고 영역 -->
+                <div class="flex items-center gap-3">
+                    <button onclick="backToLobby()" class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition-all mr-1" title="로비로 돌아가기">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="text-lg font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-none">주기율표 삼중 매칭</h1>
+                        <p id="current-mode-badge" class="text-[10px] text-indigo-400 font-bold mt-1 uppercase tracking-wider">메모리 모드 • EASY</p>
+                    </div>
+                </div>
+
+                <!-- 실시간 스코어 및 타이머 판넬 -->
+                <div class="flex items-center gap-4 sm:gap-6">
+                    <!-- 타이머 -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 px-4 py-1.5 rounded-xl flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">TIME</div>
+                            <div id="game-timer" class="text-base font-mono font-bold text-slate-100">00:00</div>
+                        </div>
+                    </div>
+
+                    <!-- 진행률 -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 px-4 py-1.5 rounded-xl flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">MATCHED</div>
+                            <div id="match-counter" class="text-base font-mono font-bold text-slate-100">0 / 10</div>
+                        </div>
+                    </div>
+
+                    <!-- 매칭 시도 횟수 -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 px-4 py-1.5 rounded-xl flex items-center gap-2">
+                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+                        </svg>
+                        <div>
+                            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">MOVES</div>
+                            <div id="move-counter" class="text-base font-mono font-bold text-slate-100">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 보드 프레임 -->
+        <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow flex flex-col gap-6">
+            <!-- 상태 조절 기능 막대 -->
+            <div class="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex items-center gap-2.5 text-xs text-slate-400">
+                    <span id="current-setting-desc" class="font-semibold text-slate-200">현재 플레이: 메모리 모드 - Easy (1~10번)</span>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- 사운드 제어 -->
+                    <button id="btn-sound-toggle" class="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 transition-all" title="사운드 켜기/끄기">
+                        <svg id="svg-sound-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        <svg id="svg-sound-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zm12.364-5.364l4.242 4.242m0-4.242l-4.242 4.242" />
+                        </svg>
+                    </button>
+
+                    <!-- 주기율표 학습 가이드 호출 -->
+                    <button id="btn-open-study" class="px-4 py-2 text-xs font-bold bg-indigo-950/40 border border-indigo-800/50 text-indigo-300 hover:bg-indigo-900/30 rounded-xl transition-all flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        주기율표 보기
+                    </button>
+
+                    <button onclick="backToLobby()" class="px-4 py-2 text-xs font-bold bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-xl transition-all">
+                        홈으로
+                    </button>
+
+                    <!-- 빠른 재기동 -->
+                    <button id="btn-restart" class="px-4 py-2 text-xs font-bold bg-slate-950 border border-slate-800 hover:border-slate-700 text-rose-400 hover:text-rose-300 rounded-xl transition-all flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+                        </svg>
+                        새 게임 시작
+                    </button>
+                </div>
+            </div>
+
+            <!-- 카드 레이아웃 판 -->
+            <div class="relative flex-grow flex flex-col justify-center">
+                <!-- 원 가이드 가이드라인 팁 -->
+                <div id="tip-banner" class="mb-4 text-center text-slate-400 text-xs sm:text-sm bg-slate-900/30 py-2 px-4 rounded-xl border border-slate-800/50">
+                    💡 <span class="font-bold text-indigo-400 font-mono">원소번호</span>, <span class="font-bold text-teal-400">원소기호</span>, <span class="font-bold text-purple-400">원소이름</span> 카드들을 자유롭게 뒤집어 3장을 고르세요! 매치 실패 시 다시 뒤집힙니다.
+                </div>
+
+                <!-- 카드 격자(Grid) - 자바스크립트로 가변 빌드 -->
+                <div id="card-grid" class="grid gap-3 min-h-[300px]">
+                    <!-- 동적 카드 주입 영역 -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 하단 바 -->
+        <footer class="border-t border-slate-900/80 bg-slate-950 py-4 px-4 mt-8">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500 text-center">
+                <p>© 2026 주기율표 삼중 매칭 학습 퍼즐. 교육용 프로젝트.</p>
+                <p>Easy 모드(10원소, 30장), Hard 모드(20원소, 60장)의 완벽 매칭을 보장합니다.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 공부하기 주기율표 정보 모달 -->
+    <div id="study-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <!-- 헤더 -->
+            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-100">원소 학습 참고용 주기율표 (1~20번)</h2>
+                </div>
+                <button id="btn-close-study" class="p-1 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- 카드 본문 -->
+            <div class="p-6 overflow-y-auto space-y-6">
+                <p class="text-sm text-slate-400">
+                    게임 시작 전에 원소 번호, 기호, 한글 이름을 눈에 익히고 짝을 맞춰 보세요!
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <div id="study-grid-container" class="contents"></div>
+                </div>
+            </div>
+
+            <!-- 닫기 버튼 -->
+            <div class="px-6 py-4 border-t border-slate-800 bg-slate-950 flex justify-end">
+                <button id="btn-close-study-footer" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition-all">
+                    공부 완료, 다시 퍼즐 도전!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 미션 완수 정산 / 랭킹 등록 팝업 -->
+    <div id="win-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-indigo-500/30 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl shadow-indigo-500/10 p-8 text-center relative">
+            <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white text-4xl shadow-lg shadow-amber-500/20 mb-6 animate-bounce">
+                🏆
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-orange-400 mb-2">
+                퍼즐 클리어 완료!
+            </h2>
+            <p class="text-slate-400 text-sm mb-6">모든 세 장 조합의 삼중 매칭을 훌륭하게 완수하셨습니다.</p>
+
+            <!-- 스코어 판정 정보 -->
+            <div class="grid grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl mb-6">
+                <div class="text-center">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">소요 시간</div>
+                    <div id="result-time" class="text-lg font-mono font-bold text-indigo-400">00:00</div>
+                </div>
+                <div class="text-center border-x border-slate-800/60">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">총 시도</div>
+                    <div id="result-moves" class="text-lg font-mono font-bold text-purple-400">0회</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">정확도 효율</div>
+                    <div id="result-efficiency" class="text-lg font-mono font-bold text-emerald-400">00%</div>
+                </div>
+            </div>
+
+            <!-- HARD 레벨 랭킹 입력 영역 -->
+            <div id="ranking-input-panel" class="hidden bg-indigo-950/20 border border-indigo-900/50 p-4 rounded-2xl mb-6 text-left">
+                <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">🏆 HARD 모드 랭킹 등록</label>
+                <div class="flex gap-2">
+                    <input type="text" id="player-name-input" maxlength="10" placeholder="닉네임 입력 (최대 10자)" class="flex-grow bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-sm text-slate-200 outline-none">
+                    <button id="btn-submit-ranking" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all">
+                        기록 등록
+                    </button>
+                </div>
+                <p id="ranking-status-msg" class="text-[10px] text-slate-500 mt-2">이름을 적고 오늘의 실시간 랭킹에 명예를 올리세요.</p>
+            </div>
+
+            <!-- 랭킹 실시간 결과판 -->
+            <div id="ranking-display-panel" class="hidden bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl mb-6 text-left max-h-[160px] overflow-y-auto">
+                <div class="text-xs font-bold text-amber-400 mb-2 flex items-center justify-between">
+                    <span>🏆 HARD 모드 실시간 순위</span>
+                    <span id="ranking-mode-label" class="text-[10px] text-slate-500"></span>
+                </div>
+                <ul id="win-ranking-list" class="text-xs space-y-1.5 text-slate-300">
+                    <!-- 랭킹 목록 동적 주입 -->
+                </ul>
+            </div>
+
+            <!-- 격려 한마디 -->
+            <blockquote class="italic text-slate-400 text-xs px-4 py-3 bg-indigo-950/10 rounded-xl border border-indigo-900/20 mb-6">
+                "화학의 기초를 마스터하셨습니다! 원소들을 더 빠르게 외울수록 기록이 훨씬 향상됩니다."
+            </blockquote>
+
+            <!-- 리액션 액션 버튼 -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="btn-win-restart" class="flex-1 py-3 px-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition-all">
+                    다시 도전하기
+                </button>
+                <button id="btn-win-lobby" onclick="backToLobby()" class="flex-1 py-3 px-6 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold text-sm rounded-xl transition-all">
+                    홈으로 가기
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 간단한 작동 확인용 자바스크립트 함수
-        function sayHello() {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerText = "반갑습니다! 정상적으로 작동하고 있습니다.";
-        }
-    </script>
+        /* ==========================================================================
+           1. 주기율표 원소 데이터셋 (1번 ~ 20번)
+           ========================================================================== */
+        const ELEMENT_DATA = [
+            { num: 1, sym: "H", name: "수소" },
+            { num: 2, sym: "He", name: "헬륨" },
+            { num: 3, sym: "Li", name: "리튬" },
+            { num: 4, sym: "Be", name: "베릴륨" },
+            { num: 5, sym: "B", name: "붕소" },
+            { num: 6, sym: "C", name: "탄소" },
+            { num: 7, sym: "N", name: "질소" },
+            { num: 8, sym: "O", name: "산소" },
+            { num: 9, sym: "F", name: "플루오린" },
+            { num: 10, sym: "Ne", name: "네온" },
+            { num: 11, sym: "Na", name: "나트륨" },
+            { num: 12, sym: "Mg", name: "마그네슘" },
+            { num: 13, sym: "Al", name: "알루미늄" },
+            { num: 14, sym: "Si", name: "규소" },
+            { num: 15, sym: "P", name: "인" },
+            { num: 16, sym: "S", name: "황" },
+            { num: 17, sym: "Cl", name: "염소" },
+            { num: 18, sym: "Ar", name: "아르곤" },
+            { num: 19, sym: "K", name: "칼륨" },
+            { num: 20, sym: "Ca", name: "칼슘" }
+        ];
 
+        /* ==========================================================================
+           2. 전역 상태값 저장소
+           ========================================================================== */
+        let config = {
+            limit: 10,       // 10: Easy / 20: Hard
+            mode: 'memory'   // 'memory' / 'speed'
+        };
+
+        let gameState = {
+            cards: [],            // 게임 보드에 흩어질 총 카드 묶음
+            selectedIds: [],      // 사용자가 현재 선택/뒤집은 카드 고유 ID 목록 (최대 3장)
+            matchedNumCount: 0,   // 정상 수립된 3중 결합 세트 개수
+            moves: 0,             // 판정 확인 횟수
+            secondsElapsed: 0,    // 타이머 기록 시간
+            timerId: null,        // 타이머 스레드 핸들러
+            isBusy: false,        // 매칭 점검 시간 동안 추가 터치 조작 방지 플래그
+            rankingSubmitted: false // 랭킹 등록 완료 상태 플래그
+        };
+
+        // 세션 보존용 실시간 랭킹 스토리지
+        let hardRankings = {
+            memory: [], 
+            speed: []
+        };
+
+        /* ==========================================================================
+           3. Web Audio API 기반 오디오 피드백 사운드 시스템
+           ========================================================================== */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'flip') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(700, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } 
+            else if (type === 'select') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+            else if (type === 'match') {
+                const freqs = [523.25, 783.99, 1046.50]; // C5, G5, C6
+                freqs.forEach((freq, idx) => {
+                    const localOsc = audioCtx.createOscillator();
+                    const localGain = audioCtx.createGain();
+                    localOsc.connect(localGain);
+                    localGain.connect(audioCtx.destination);
+                    localOsc.type = 'sine';
+                    localOsc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    
+                    localGain.gain.setValueAtTime(0, now);
+                    localGain.gain.linearRampToValueAtTime(0.15, now + (idx * 0.08) + 0.02);
+                    localGain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.35);
+                    
+                    localOsc.start(now + (idx * 0.08));
+                    localOsc.stop(now + (idx * 0.08) + 0.4);
+                });
+            } 
+            else if (type === 'mismatch') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } 
+            else if (type === 'victory') {
+                const chords = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+                chords.forEach((freq, idx) => {
+                    const localOsc = audioCtx.createOscillator();
+                    const localGain = audioCtx.createGain();
+                    localOsc.connect(localGain);
+                    localGain.connect(audioCtx.destination);
+                    localOsc.type = 'triangle';
+                    localOsc.frequency.setValueAtTime(freq, now);
+                    localOsc.frequency.linearRampToValueAtTime(freq + 5, now + 0.2);
+                    localOsc.frequency.linearRampToValueAtTime(freq - 5, now + 0.4);
+                    localOsc.frequency.linearRampToValueAtTime(freq, now + 0.6);
+                    localGain.gain.setValueAtTime(0, now);
+                    localGain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+                    localGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+                    localOsc.start(now);
+                    localOsc.stop(now + 1.2);
+                });
+            }
+        }
+
+        /* ==========================================================================
+           4. 화면 이동 및 모드 분기 시스템
+           ========================================================================== */
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const gameScreen = document.getElementById('game-screen');
+
+        function startGameFromLobby(mode, level) {
+            initAudio();
+            playSound('select');
+            
+            config.mode = mode;
+            config.limit = (level === 'easy') ? 10 : 20;
+
+            const modeBadgeText = `${mode === 'memory' ? '🧠 메모리 모드' : '⚡ 스피드 모드'} • ${level === 'easy' ? 'EASY' : 'HARD'}`;
+            document.getElementById('current-mode-badge').textContent = modeBadgeText;
+            document.getElementById('current-setting-desc').textContent = `현재 플레이: ${mode === 'memory' ? '메모리 모드' : '스피드 모드'} - ${level === 'easy' ? 'Easy (1~10번)' : 'Hard (1~20번)'}`;
+
+            lobbyScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            initGame();
+        }
+
+        function backToLobby() {
+            clearInterval(gameState.timerId);
+            playSound('flip');
+
+            updateLobbyRankingDisplay();
+
+            gameScreen.classList.add('hidden');
+            document.getElementById('win-modal').classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
+        }
+
+        /* ==========================================================================
+           5. 게임 초기화 및 무작위 셔플 시스템
+           ========================================================================== */
+        const cardGrid = document.getElementById('card-grid');
+        const gameTimerEl = document.getElementById('game-timer');
+        const matchCounterEl = document.getElementById('match-counter');
+        const moveCounterEl = document.getElementById('move-counter');
+
+        function initGame() {
+            clearInterval(gameState.timerId);
+            gameState.selectedIds = [];
+            gameState.matchedNumCount = 0;
+            gameState.moves = 0;
+            gameState.secondsElapsed = 0;
+            gameState.isBusy = false;
+            gameState.rankingSubmitted = false;
+
+            gameTimerEl.textContent = "00:00";
+            matchCounterEl.textContent = `0 / ${config.limit}`;
+            moveCounterEl.textContent = "0";
+
+            document.getElementById('win-modal').classList.add('hidden');
+
+            startTimer();
+            buildCards();
+            renderBoard();
+        }
+
+        function startTimer() {
+            gameState.secondsElapsed = 0;
+            gameState.timerId = setInterval(() => {
+                gameState.secondsElapsed++;
+                const mins = String(Math.floor(gameState.secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(gameState.secondsElapsed % 60).padStart(2, '0');
+                gameTimerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function buildCards() {
+            const list = [];
+            const activeElements = ELEMENT_DATA.slice(0, config.limit);
+
+            activeElements.forEach(item => {
+                // 1. 원소번호 카드
+                list.push({
+                    id: `${item.num}_num`,
+                    val: item.num,
+                    type: 'num',
+                    num: item.num,
+                    isFlipped: config.mode === 'speed', // 스피드는 전체 공개, 메모리는 뒷면으로 시작
+                    isMatched: false
+                });
+                // 2. 원소기호 카드
+                list.push({
+                    id: `${item.num}_sym`,
+                    val: item.sym,
+                    type: 'sym',
+                    num: item.num,
+                    isFlipped: config.mode === 'speed',
+                    isMatched: false
+                });
+                // 3. 원소이름 카드
+                list.push({
+                    id: `${item.num}_name`,
+                    val: item.name,
+                    type: 'name',
+                    num: item.num,
+                    isFlipped: config.mode === 'speed',
+                    isMatched: false
+                });
+            });
+
+            // Fisher-Yates 무작위 셔플 알고리즘 실행
+            for (let i = list.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [list[i], list[j]] = [list[j], list[i]];
+            }
+
+            gameState.cards = list;
+        }
+
+        /* ==========================================================================
+           6. 3D 카드 렌더링 및 동기화 제어부
+           ========================================================================== */
+        function renderBoard() {
+            cardGrid.innerHTML = '';
+
+            // 가변 그리드 클래스 주입
+            if (config.limit === 20) {
+                cardGrid.className = "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-2 sm:gap-2.5 min-h-[350px]";
+            } else {
+                cardGrid.className = "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-6 gap-3 sm:gap-4 min-h-[300px]";
+            }
+
+            gameState.cards.forEach(card => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = `perspective-1000 aspect-[3/4] w-full cursor-pointer touch-manipulation select-none relative transition-all duration-700`;
+                cardWrapper.dataset.id = card.id;
+
+                let categoryColorClass = "";
+                let typeLabel = "";
+                if (card.type === 'num') {
+                    categoryColorClass = "from-indigo-950 to-blue-900 border-indigo-500/60 text-indigo-200 shadow-indigo-500/5";
+                    typeLabel = "번호";
+                } else if (card.type === 'sym') {
+                    categoryColorClass = "from-teal-950 to-emerald-900 border-teal-500/60 text-teal-200 shadow-teal-500/5";
+                    typeLabel = "기호";
+                } else if (card.type === 'name') {
+                    categoryColorClass = "from-purple-950 to-fuchsia-900 border-purple-500/60 text-purple-200 shadow-purple-500/5";
+                    typeLabel = "이름";
+                }
+
+                cardWrapper.innerHTML = `
+                    <div class="card-inner w-full h-full">
+                        <!-- 1. 뒷면 (물음표 상태) -->
+                        <div class="card-face card-face-back border-2 border-slate-800 bg-slate-900 flex flex-col items-center justify-center p-2 shadow-inner bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+                            <span class="text-[9px] sm:text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none">ELEMENT</span>
+                            <div class="text-base sm:text-xl font-black text-indigo-500/50 mt-1">?</div>
+                        </div>
+
+                        <!-- 2. 앞면 (원소 실제 정보 카드) -->
+                        <div class="card-face card-face-front border-2 ${categoryColorClass} bg-gradient-to-br flex flex-col justify-between p-2 shadow-lg">
+                            <div class="flex justify-between items-center w-full">
+                                <span class="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-widest opacity-80">${typeLabel}</span>
+                                <div class="w-1.5 h-1.5 rounded-full bg-current opacity-80"></div>
+                            </div>
+                            
+                            <div class="text-center flex-grow flex items-center justify-center">
+                                <span class="text-xs sm:text-sm md:text-base lg:text-lg font-extrabold tracking-wide drop-shadow-md">
+                                    ${card.val}
+                                </span>
+                            </div>
+                            
+                            <div class="text-right w-full">
+                                <span class="text-[8px] sm:text-[9px] font-mono opacity-50">#${card.num}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                cardWrapper.addEventListener('click', () => handleCardClick(card.id));
+                cardGrid.appendChild(cardWrapper);
+            });
+
+            // 생성 직후 전체 동기화 트리거 작동
+            syncAllCardsUI();
+        }
+
+        // 카드의 '회전 여부', '테두리 피드백', '정답 소거 페이드아웃' 상태를 동기화 제어합니다.
+        function syncAllCardsUI() {
+            gameState.cards.forEach(card => {
+                const cardEl = document.querySelector(`[data-id="${card.id}"]`);
+                if (!cardEl) return;
+
+                const cardInner = cardEl.querySelector('.card-inner');
+                const cardFront = cardEl.querySelector('.card-face-front');
+
+                // 1. 뒤집힌 플립(Flipped) 처리 동기화
+                if (card.isFlipped) {
+                    cardInner.classList.add('is-flipped');
+                } else {
+                    cardInner.classList.remove('is-flipped');
+                }
+
+                // 2. 선택됨(Selected) 시각 효과 적용
+                const isSelected = gameState.selectedIds.includes(card.id);
+                if (isSelected) {
+                    cardFront.classList.add('ring-4', 'ring-indigo-400', 'ring-offset-2', 'ring-offset-slate-950', 'scale-105', 'z-10');
+                } else {
+                    cardFront.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'ring-offset-slate-950', 'scale-105', 'z-10');
+                }
+
+                // 3. 맞춤 성공(Matched) 카드 완전 제거 및 흐림 상태 연출
+                if (card.isMatched) {
+                    cardEl.classList.add('opacity-0', 'pointer-events-none', 'scale-90', 'duration-700');
+                } else {
+                    cardEl.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
+                }
+            });
+        }
+
+        /* ==========================================================================
+           7. 카드 선택 및 3중 자유 결합 매칭 알고리즘
+           ========================================================================== */
+        function handleCardClick(cardId) {
+            // 다른 매칭 판정이 연산 중인 비지 상태면 추가 터치를 차단합니다.
+            if (gameState.isBusy) return;
+
+            const cardIndex = gameState.cards.findIndex(c => c.id === cardId);
+            const card = gameState.cards[cardIndex];
+
+            // 이미 정답처리된 카드는 무시합니다.
+            if (card.isMatched) return;
+
+            // 이미 내가 골랐던 카드인 경우 -> 선택 취소
+            if (gameState.selectedIds.includes(cardId)) {
+                playSound('flip');
+                gameState.selectedIds = gameState.selectedIds.filter(id => id !== cardId);
+                if (config.mode === 'memory') {
+                    card.isFlipped = false;
+                }
+                syncAllCardsUI();
+                return;
+            }
+
+            // [업그레이드]: 동일한 카드 종류(속성)여도 강제 뒤집어 꺼짐 없이 무조건 연속으로 최대 3장까지 선택을 허용합니다!
+            playSound('flip');
+            gameState.selectedIds.push(cardId);
+            
+            if (config.mode === 'memory') {
+                card.isFlipped = true;
+            }
+
+            syncAllCardsUI();
+
+            // 정확히 3장의 카드가 모였을 때 삼중 매칭 검사를 실시합니다.
+            if (gameState.selectedIds.length === 3) {
+                checkTripleMatch();
+            }
+        }
+
+        function checkTripleMatch() {
+            gameState.isBusy = true;
+            gameState.moves++;
+            moveCounterEl.textContent = gameState.moves;
+
+            const card1 = gameState.cards.find(c => c.id === gameState.selectedIds[0]);
+            const card2 = gameState.cards.find(c => c.id === gameState.selectedIds[1]);
+            const card3 = gameState.cards.find(c => c.id === gameState.selectedIds[2]);
+
+            // 엄격한 삼중 결합 조건 검증:
+            // 1. 세 카드의 타입이 각각 'num', 'sym', 'name'으로 완전히 고유해야 함 (중복 종류 불허)
+            const typeSet = new Set([card1.type, card2.type, card3.type]);
+            const isThreeDifferentTypes = typeSet.size === 3;
+
+            // 2. 세 카드가 가리키는 원소 번호(num)가 모두 완벽히 일치해야 함
+            const isSameElement = (card1.num === card2.num && card2.num === card3.num);
+
+            if (isThreeDifferentTypes && isSameElement) {
+                // 매칭 성공 처리
+                setTimeout(() => {
+                    playSound('match');
+                    
+                    card1.isMatched = true;
+                    card2.isMatched = true;
+                    card3.isMatched = true;
+
+                    createMatchFloatingText(card1.val, card2.val, card3.val);
+
+                    gameState.selectedIds = [];
+                    gameState.matchedNumCount++;
+                    matchCounterEl.textContent = `${gameState.matchedNumCount} / ${config.limit}`;
+                    
+                    gameState.isBusy = false;
+                    syncAllCardsUI();
+
+                    if (gameState.matchedNumCount === config.limit) {
+                        endGame();
+                    }
+                }, 500);
+            } else {
+                // 매칭 실패 처리: 선택한 3장이 모두 "일괄 복원"됩니다.
+                setTimeout(() => {
+                    playSound('mismatch');
+
+                    // 1단계: 카드에 에러 흔들림 효과 부여
+                    gameState.selectedIds.forEach(id => {
+                        const el = document.querySelector(`[data-id="${id}"]`);
+                        if (el) el.classList.add('animate-shake');
+                    });
+
+                    // 2단계: 잠시 후 흔들림을 끄고, 3장을 동시에 원래 상태로 복원
+                    setTimeout(() => {
+                        gameState.selectedIds.forEach(id => {
+                            const el = document.querySelector(`[data-id="${id}"]`);
+                            if (el) el.classList.remove('animate-shake');
+                        });
+
+                        // 메모리 모드인 경우 3장의 카드 플립 상태를 전부 초기 상태(뒤집어짐 해제)로 복원
+                        if (config.mode === 'memory') {
+                            card1.isFlipped = false;
+                            card2.isFlipped = false;
+                            card3.isFlipped = false;
+                        }
+
+                        gameState.selectedIds = [];
+                        gameState.isBusy = false;
+                        syncAllCardsUI();
+                    }, 400);
+
+                }, 500);
+            }
+        }
+
+        // 플로팅 매치 완료 팝업 연출
+        function createMatchFloatingText(v1, v2, v3) {
+            const popup = document.createElement('div');
+            popup.className = 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none flex flex-col items-center justify-center';
+            popup.innerHTML = `
+                <div class="animate-float-up bg-gradient-to-r from-emerald-500 to-indigo-500 text-white font-extrabold px-6 py-3 rounded-full shadow-2xl text-xs sm:text-sm border border-white/20 tracking-wider flex items-center gap-2">
+                    ✨ 삼중 결합 완료! [${v1} - ${v2} - ${v3}]
+                </div>
+            `;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        /* ==========================================================================
+           8. 명예의 전당 랭킹 연동 및 클리어 결과 정산부
+           ========================================================================== */
+        const winModal = document.getElementById('win-modal');
+        const rankingInputPanel = document.getElementById('ranking-input-panel');
+        const rankingDisplayPanel = document.getElementById('ranking-display-panel');
+        const playerNameInput = document.getElementById('player-name-input');
+        const btnSubmitRanking = document.getElementById('btn-submit-ranking');
+        const winRankingList = document.getElementById('win-ranking-list');
+        const rankingModeLabel = document.getElementById('ranking-mode-label');
+
+        function endGame() {
+            clearInterval(gameState.timerId);
+            playSound('victory');
+
+            const mins = String(Math.floor(gameState.secondsElapsed / 60)).padStart(2, '0');
+            const secs = String(gameState.secondsElapsed % 60).padStart(2, '0');
+            
+            document.getElementById('result-time').textContent = `${mins}:${secs}`;
+            document.getElementById('result-moves').textContent = `${gameState.moves}회`;
+
+            const efficiency = Math.round((config.limit / gameState.moves) * 100);
+            document.getElementById('result-efficiency').textContent = `${Math.min(100, efficiency)}%`;
+
+            // Hard 레벨 한정으로 이름 기입 창 노출
+            if (config.limit === 20) {
+                rankingInputPanel.classList.remove('hidden');
+                rankingDisplayPanel.classList.remove('hidden');
+                rankingModeLabel.textContent = config.mode === 'memory' ? 'Memory Hard' : 'Speed Hard';
+                playerNameInput.value = '';
+                document.getElementById('ranking-status-msg').textContent = '닉네임을 적어 랭킹에 올리세요!';
+                document.getElementById('ranking-status-msg').className = 'text-[10px] text-slate-500 mt-2';
+                renderWinModalRankings();
+            } else {
+                rankingInputPanel.classList.add('hidden');
+                rankingDisplayPanel.classList.add('hidden');
+            }
+
+            winModal.classList.remove('hidden');
+        }
+
+        function renderWinModalRankings() {
+            const list = hardRankings[config.mode];
+            winRankingList.innerHTML = '';
+            
+            if (list.length === 0) {
+                winRankingList.innerHTML = '<li class="text-center text-slate-500 py-2">등록된 기록이 없습니다. 최초 영광을 획득하세요!</li>';
+                return;
+            }
+
+            list.forEach((item, index) => {
+                const isTop = index < 3;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}위`;
+                const mins = String(Math.floor(item.time / 60)).padStart(2, '0');
+                const secs = String(item.time % 60).padStart(2, '0');
+
+                const li = document.createElement('li');
+                li.className = `flex justify-between items-center py-1 border-b border-slate-800/40 last:border-0 ${isTop ? 'text-indigo-200 font-bold' : 'text-slate-400'}`;
+                li.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-8 text-[11px] font-bold text-slate-500">${medal}</span>
+                        <span>${item.name}</span>
+                    </div>
+                    <div class="flex items-center gap-3 font-mono text-[11px]">
+                        <span>⏱️ ${mins}:${secs}</span>
+                        <span>🎯 ${item.moves}회</span>
+                    </div>
+                `;
+                winRankingList.appendChild(li);
+            });
+        }
+
+        function updateLobbyRankingDisplay() {
+            const memoryList = hardRankings.memory;
+            const speedList = hardRankings.speed;
+
+            const lobbyMemoryEl = document.getElementById('lobby-ranking-memory');
+            const lobbySpeedEl = document.getElementById('lobby-ranking-speed');
+
+            if (memoryList.length === 0) {
+                lobbyMemoryEl.innerHTML = '<li class="py-1 text-center text-slate-500">등록된 랭킹 기록이 없습니다.</li>';
+            } else {
+                lobbyMemoryEl.innerHTML = '';
+                memoryList.slice(0, 3).forEach((item, index) => {
+                    const mins = String(Math.floor(item.time / 60)).padStart(2, '0');
+                    const secs = String(item.time % 60).padStart(2, '0');
+                    lobbyMemoryEl.innerHTML += `
+                        <li class="flex justify-between py-1 border-b border-slate-800/40 last:border-0">
+                            <span>${index + 1}. ${item.name}</span>
+                            <span class="font-mono text-indigo-300">${mins}:${secs} (${item.moves}회)</span>
+                        </li>
+                    `;
+                });
+            }
+
+            if (speedList.length === 0) {
+                lobbySpeedEl.innerHTML = '<li class="py-1 text-center text-slate-500">등록된 랭킹 기록이 없습니다.</li>';
+            } else {
+                lobbySpeedEl.innerHTML = '';
+                speedList.slice(0, 3).forEach((item, index) => {
+                    const mins = String(Math.floor(item.time / 60)).padStart(2, '0');
+                    const secs = String(item.time % 60).padStart(2, '0');
+                    lobbySpeedEl.innerHTML += `
+                        <li class="flex justify-between py-1 border-b border-slate-800/40 last:border-0">
+                            <span>${index + 1}. ${item.name}</span>
+                            <span class="font-mono text-emerald-300">${mins}:${secs} (${item.moves}회)</span>
+                        </li>
+                    `;
+                });
+            }
+        }
+
+        btnSubmitRanking.addEventListener('click', () => {
+            if (gameState.rankingSubmitted) return;
+
+            const name = playerNameInput.value.trim();
+            if (!name) {
+                document.getElementById('ranking-status-msg').textContent = '⚠️ 올바른 닉네임을 적어주세요.';
+                document.getElementById('ranking-status-msg').className = 'text-[10px] text-rose-400 mt-2';
+                return;
+            }
+
+            const record = {
+                name: name,
+                time: gameState.secondsElapsed,
+                moves: gameState.moves
+            };
+
+            hardRankings[config.mode].push(record);
+            hardRankings[config.mode].sort((a, b) => a.time - b.time);
+            
+            if (hardRankings[config.mode].length > 5) {
+                hardRankings[config.mode] = hardRankings[config.mode].slice(0, 5);
+            }
+
+            gameState.rankingSubmitted = true;
+            document.getElementById('ranking-status-msg').textContent = '✅ 명예의 전당 등록에 성공했습니다!';
+            document.getElementById('ranking-status-msg').className = 'text-[10px] text-emerald-400 mt-2';
+            playerNameInput.disabled = true;
+            btnSubmitRanking.disabled = true;
+
+            playSound('match');
+            renderWinModalRankings();
+            updateLobbyRankingDisplay();
+        });
+
+        /* ==========================================================================
+           9. 학습 가이드 모달 관리 및 오디오 스위칭
+           ========================================================================== */
+        const btnOpenStudy = document.getElementById('btn-open-study');
+        const studyModal = document.getElementById('study-modal');
+        const btnCloseStudy = document.getElementById('btn-close-study');
+        const btnCloseStudyFooter = document.getElementById('btn-close-study-footer');
+        const studyGridContainer = document.getElementById('study-grid-container');
+        const btnSoundToggle = document.getElementById('btn-sound-toggle');
+        const svgSoundOn = document.getElementById('svg-sound-on');
+        const svgSoundOff = document.getElementById('svg-sound-off');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnWinRestart = document.getElementById('btn-win-restart');
+
+        function renderStudyGuide() {
+            studyGridContainer.innerHTML = '';
+            ELEMENT_DATA.forEach(elem => {
+                let bgBorder = "border-slate-800 bg-slate-900/60 hover:bg-slate-800/40";
+                if ([1, 6, 7, 8, 9, 15, 16, 17].includes(elem.num)) {
+                    bgBorder = "border-emerald-900/60 bg-emerald-950/20 hover:bg-emerald-900/30";
+                } else if ([2, 10, 18].includes(elem.num)) {
+                    bgBorder = "border-fuchsia-900/60 bg-fuchsia-950/20 hover:bg-fuchsia-900/30";
+                } else if ([3, 11, 19, 4, 12, 20].includes(elem.num)) {
+                    bgBorder = "border-amber-900/60 bg-amber-950/20 hover:bg-amber-900/30";
+                }
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-3 rounded-2xl border ${bgBorder} flex flex-col justify-between h-28 transition-all duration-300 transform hover:-translate-y-1`;
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-slate-500 font-mono">No. ${elem.num}</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xl font-black text-indigo-400 tracking-tight">${elem.sym}</div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs font-semibold text-slate-300">${elem.name}</span>
+                        <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                    </div>
+                `;
+                studyGridContainer.appendChild(itemDiv);
+            });
+        }
+
+        btnSoundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                svgSoundOn.classList.remove('hidden');
+                svgSoundOff.classList.add('hidden');
+                initAudio();
+                playSound('select');
+            } else {
+                svgSoundOn.classList.add('hidden');
+                svgSoundOff.classList.remove('hidden');
+            }
+        });
+
+        btnOpenStudy.addEventListener('click', () => {
+            playSound('select');
+            renderStudyGuide();
+            studyModal.classList.remove('hidden');
+        });
+
+        function closeStudyModal() {
+            playSound('flip');
+            studyModal.classList.add('hidden');
+        }
+
+        btnCloseStudy.addEventListener('click', closeStudyModal);
+        btnCloseStudyFooter.addEventListener('click', closeStudyModal);
+
+        btnRestart.addEventListener('click', () => {
+            playSound('mismatch');
+            initGame();
+        });
+
+        btnWinRestart.addEventListener('click', () => {
+            playerNameInput.disabled = false;
+            btnSubmitRanking.disabled = false;
+            initGame();
+        });
+
+        /* ==========================================================================
+           10. 브라우저 온로드 진입점
+           ========================================================================== */
+        window.onload = function() {
+            renderStudyGuide();
+            updateLobbyRankingDisplay();
+        };
+    </script>
 </body>
 </html>
